@@ -127,7 +127,7 @@ fun NotesScreen(
                 },
                 actions = {
                     IconButton(onClick = { viewModel.uploadToWebDav() }, enabled = !isSyncing) {
-                        Icon(Icons.Default.CloudUpload, contentDescription = "上传到 WebDAV")
+                        Icon(Icons.Default.CloudUpload, contentDescription = "上传备份到 WebDAV（含便签）")
                     }
                     IconButton(onClick = { viewModel.restoreNotesFromWebDav() }, enabled = !isSyncing) {
                         Icon(Icons.Default.CloudDownload, contentDescription = "从 WebDAV 恢复便签")

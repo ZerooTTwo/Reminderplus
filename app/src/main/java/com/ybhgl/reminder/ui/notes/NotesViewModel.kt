@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ybhgl.reminder.data.BackupData
 import com.ybhgl.reminder.data.BackupPreferences
+import com.ybhgl.reminder.data.ManualWebDavBackup
 import com.ybhgl.reminder.data.NoteCategoryItem
 import com.ybhgl.reminder.data.NoteItem
 import com.ybhgl.reminder.data.NoteRepository
@@ -193,35 +194,24 @@ class NotesViewModel(
 
     fun clearSyncMessage() { _syncMessage.value = null }
 
-    /** 上传：复用统一备份链路（含便签），强制触发一次 */
+    /** 上传：走「手动备份」链路（不依赖自动备份开关），备份数据里已包含便签 */
     fun uploadToWebDav() {
         if (_isSyncing.value) return
         _isSyncing.value = true
         viewModelScope.launch {
-            val message = withContext(Dispatchers.IO) {
-                runCatching {
-                    val server = BackupPreferences.webDavServerFlow(appContext).first()
-                    val user = BackupPreferences.webDavUsernameFlow(appContext).first()
-                    val enabled = BackupPreferences.autoBackupWebDavEnabledFlow(appContext).first()
-                    when {
-                        server.isBlank() || user.isBlank() ->
-                            "请先在「设置 → 备份与恢复」中填写 WebDAV 服务器与账号"
-                        !enabled ->
-                            "请先在「设置 → 备份与恢复」中开启 WebDAV 自动备份"
-                        else -> {
-                            val result = BackupPreferences.triggerAutoBackup(appContext, force = true)
-                            if (result.success) "已上传到 WebDAV（备份含便签）"
-                            else result.errorMessage ?: "上传失败"
-                        }
-                    }
-                }.getOrElse { "上传失败：${it.localizedMessage ?: "未知错误"}" }
-            }
-            _syncMessage.value = message
+            val result = runCatching { ManualWebDavBackup.upload(appContext) }.getOrNull()
+            _syncMessage.value = result?.message
+                ?: "上传失败：发生未知异常，请确认 WebDAV 地址与网络后重试"
             _isSyncing.value = false
         }
     }
 
-    /** 恢复：取云端最新一次自动备份，仅把其中的便签合并回本机 */
+    /**
+     * 恢复：取云端最新的备份，仅把其中的便签合并回本机。
+     *
+     * 同时扫描根目录（手动备份：reminder-backup-*.zip）与 Auto 目录
+     * （自动备份：reminder-autobackup-*.zip），按文件名里的时间戳取最新的一份。
+     */
     fun restoreNotesFromWebDav() {
         if (_isSyncing.value) return
         _isSyncing.value = true
@@ -233,26 +223,34 @@ class NotesViewModel(
                     val password = BackupPreferences.webDavPasswordFlow(appContext).first()
                     val path = BackupPreferences.webDavPathFlow(appContext).first()
                     if (server.isBlank() || user.isBlank() || password.isBlank()) {
-                        return@runCatching "请先在「设置 → 备份与恢复」中填写 WebDAV 服务器与账号"
+                        return@runCatching "请先在「设置 → 备份与恢复」中填写并保存 WebDAV 服务器、账号和密码"
                     }
-                    val autoPath = if (path.endsWith("/")) "${path}Auto" else "$path/Auto"
-                    val listing = WebDavClient.listFilesActual(server, user, password, autoPath)
-                    if (listing !is WebDavListResult.Success) {
-                        val code = (listing as? WebDavListResult.Failure)?.code
-                        return@runCatching "读取云端备份列表失败（$code）"
-                    }
-                    val newest = listing.files
-                        .filter { it.name.startsWith("reminder-autobackup-") && it.name.endsWith(".zip") }
-                        .maxByOrNull { it.name }
-                        ?: return@runCatching "云端暂无自动备份文件"
 
-                    val downloaded = WebDavClient.downloadFileBytes(server, user, password, autoPath, newest.name)
+                    val autoPath = if (path.endsWith("/")) "${path}Auto" else "$path/Auto"
+
+                    fun listBackups(dir: String): List<Pair<String, String>> {
+                        val listing = WebDavClient.listFilesActual(server, user, password, dir)
+                        if (listing !is WebDavListResult.Success) return emptyList()
+                        return listing.files
+                            .filter { it.name.startsWith("reminder-") && it.name.endsWith(".zip") }
+                            .map { dir to it.name }
+                    }
+
+                    val candidates = (listBackups(path) + listBackups(autoPath))
+                        .sortedByDescending { (_, name) -> timestampOf(name) }
+
+                    if (candidates.isEmpty()) {
+                        return@runCatching "云端暂无可用的备份文件"
+                    }
+
+                    val (dir, fileName) = candidates.first()
+                    val downloaded = WebDavClient.downloadFileBytes(server, user, password, dir, fileName)
                     if (downloaded !is WebDavDownloadBytesResult.Success) {
                         val code = (downloaded as? WebDavDownloadBytesResult.Failure)?.code
-                        return@runCatching "下载云端备份失败（$code）"
+                        return@runCatching "下载云端备份失败（码 $code）"
                     }
                     val archive = BackupArchiveManager.decode(downloaded.content)
-                        ?: return@runCatching "备份包解析失败"
+                        ?: return@runCatching "备份包解析失败（可能已加密且密码/密钥不匹配）"
 
                     val backupData = runCatching {
                         Json { ignoreUnknownKeys = true }
@@ -260,13 +258,15 @@ class NotesViewModel(
                     }.getOrNull() ?: return@runCatching "备份内容格式不兼容"
 
                     val notes = backupData.notes.orEmpty()
-                    if (notes.isEmpty()) return@runCatching "该备份中没有便签数据"
+                    if (notes.isEmpty()) {
+                        return@runCatching "该备份（$fileName）中没有便签数据"
+                    }
 
                     val (inserted, updated) = noteRepository.restoreMerge(notes, backupData.noteCategories)
                     if (inserted == 0 && updated == 0) {
-                        "云端便签与本机一致，无需恢复"
+                        "云端便签与本机一致，无需恢复（$fileName）"
                     } else {
-                        "已从云端恢复便签：新增 $inserted 条、更新 $updated 条"
+                        "已从 $fileName 恢复便签：新增 $inserted 条、更新 $updated 条"
                     }
                 }.getOrElse { "恢复失败：${it.localizedMessage ?: "未知错误"}" }
             }
@@ -274,4 +274,8 @@ class NotesViewModel(
             _isSyncing.value = false
         }
     }
+
+    /** 从备份文件名中取出 yyyyMMdd-HHmmss 时间戳用于排序，取不到返回空串 */
+    private fun timestampOf(fileName: String): String =
+        Regex("(\\d{8}-\\d{6})").find(fileName)?.value.orEmpty()
 }

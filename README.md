@@ -9,7 +9,7 @@
 ![Android](https://img.shields.io/badge/Platform-Android-green?logo=android)
 ![Jetpack Compose](https://img.shields.io/badge/UI-Jetpack%20Compose-blue)
 ![Material 3](https://img.shields.io/badge/Design-Material%203-6750A4)
-![Version](https://img.shields.io/badge/Version-1.0.0-blue)
+![Version](https://img.shields.io/badge/Version-1.0.1-blue)
 ![License](https://img.shields.io/badge/License-GPLv3-orange)
 
 </div>
@@ -36,7 +36,7 @@ lentikr/Reminder  →  ybhgl/Reminder  →  ZerooTTwo/Reminderplus（本仓库�
 | --- | --- |
 | 应用名 | Reminder+ |
 | applicationId | `com.zt.reminderplus` |
-| 版本 | 1.0.0（versionCode 1） |
+| 版本 | 1.0.1（versionCode 2） |
 | 最低系统 | Android 9（API 28） |
 | 架构 | arm64-v8a |
 | 包体 | 约 7 MB |
@@ -59,9 +59,11 @@ lentikr/Reminder  →  ybhgl/Reminder  →  ZerooTTwo/Reminderplus（本仓库�
 
 - 便签已纳入应用**统一的备份数据**（`BackupData.notes` / `noteCategories`），手动备份、自动备份、加密 zip 打包都天然包含便签
 - 便签页顶栏两个按钮：
-  - **上传**：强制触发一次统一备份（含便签），复用既有的加密 + WebDAV 上传链路
-  - **恢复**：拉取云端最新一次自动备份，**仅把其中的便签合并回本机**，不会覆盖本机的提醒数据
-- 前置条件：先在「设置 → 备份与恢复」填好 WebDAV 服务器 / 账号 / 路径，并开启「WebDAV 自动备份」
+  - **上传**：与「设置 → 备份与恢复 → 立即备份到 WebDAV」等价，直接上传一份完整备份（含便签）到 WebDAV 根目录，**不依赖「自动备份」开关**
+  - **恢复**：扫描 WebDAV 根目录与 `Auto/` 子目录，取最新的一份备份，**仅把其中的便签合并回本机**，不会覆盖本机的提醒数据
+- 前置条件：只需在「设置 → 备份与恢复」填好并保存 WebDAV 服务器 / 账号 / 密码 / 路径；若上传失败，请确认「设置 → 权限管理」中已允许本应用联网
+
+> 1.0.1 修复：1.0.0 中便签上传误判为「必须开启 WebDAV 自动备份」，导致只配置了 WebDAV 账号时无法上传。
 
 ### 🗂 分类命名调整
 
@@ -71,7 +73,7 @@ lentikr/Reminder  →  ybhgl/Reminder  →  ZerooTTwo/Reminderplus（本仓库�
 
 ### ⚙️ 应用标识
 
-- 应用名改为 `Reminder+`，applicationId 改为 `com.zt.reminderplus`，版本重置为 `1.0.0 (1)`
+- 应用名改为 `Reminder+`，applicationId 改为 `com.zt.reminderplus`，版本 `1.0.1 (2)`
 - 内部 Kotlin 命名空间仍为 `com.ybhgl.reminder`（保持与上游同步的便利，仅安装标识独立）
 - 数据库版本 `17 → 18`：新增 `notes`、`note_categories` 两张表
 
