@@ -270,34 +270,31 @@ class NotesViewModel(
                         .sortedByDescending { (_, name) -> timestampOf(name) }
 
                     if (candidates.isEmpty()) {
-                        return@runCatching "云端暂无可用的备份文件"
+                        return@runCatching "云端没有找到备份文件（已扫描 $path 与 $autoPath）"
                     }
 
-                    val (dir, fileName) = candidates.first()
-                    val downloaded = WebDavClient.downloadFileBytes(server, user, password, dir, fileName)
-                    if (downloaded !is WebDavDownloadBytesResult.Success) {
-                        val code = (downloaded as? WebDavDownloadBytesResult.Failure)?.code
-                        return@runCatching "下载云端备份失败（码 $code）"
-                    }
-                    val archive = BackupArchiveManager.decode(downloaded.content)
-                        ?: return@runCatching "备份包解析失败（可能已加密且密码/密钥不匹配）"
+                    // 逐个候选尝试：跳过无法下载/无法解密/不含便签的文件，直到找到可用的一份
+                    val tried = mutableListOf<String>()
+                    for ((dir, fileName) in candidates) {
+                        tried += fileName
+                        val downloaded = WebDavClient.downloadFileBytes(server, user, password, dir, fileName)
+                        if (downloaded !is WebDavDownloadBytesResult.Success) continue
+                        val archive = BackupArchiveManager.decode(downloaded.content) ?: continue
+                        val backupData = runCatching {
+                            Json { ignoreUnknownKeys = true }
+                                .decodeFromString<BackupData>(archive.metadataJson)
+                        }.getOrNull() ?: continue
+                        val notes = backupData.notes.orEmpty()
+                        if (notes.isEmpty()) continue
 
-                    val backupData = runCatching {
-                        Json { ignoreUnknownKeys = true }
-                            .decodeFromString<BackupData>(archive.metadataJson)
-                    }.getOrNull() ?: return@runCatching "备份内容格式不兼容"
-
-                    val notes = backupData.notes.orEmpty()
-                    if (notes.isEmpty()) {
-                        return@runCatching "该备份（$fileName）中没有便签数据"
+                        val (inserted, updated) = noteRepository.restoreMerge(notes, backupData.noteCategories)
+                        return@runCatching if (inserted == 0 && updated == 0) {
+                            "云端便签与本机一致，无需恢复（$fileName）"
+                        } else {
+                            "已从 $fileName 恢复便签：新增 $inserted 条、更新 $updated 条"
+                        }
                     }
-
-                    val (inserted, updated) = noteRepository.restoreMerge(notes, backupData.noteCategories)
-                    if (inserted == 0 && updated == 0) {
-                        "云端便签与本机一致，无需恢复（$fileName）"
-                    } else {
-                        "已从 $fileName 恢复便签：新增 $inserted 条、更新 $updated 条"
-                    }
+                    return@runCatching "云端共 ${candidates.size} 个备份（${tried.joinToString("、")}），但都无法下载、解密或不含便签"
                 }.getOrElse { "恢复失败：${it.localizedMessage ?: "未知错误"}" }
             }
             _syncMessage.value = message
