@@ -2217,6 +2217,14 @@ fun ReminderListScreen(
                                 }
                             )
                             FabMenuItem(
+                                icon = Icons.Default.Label,
+                                label = "标签显示",
+                                onClick = {
+                                    fabMenuExpanded = false
+                                    navController.navigate(Routes.tagManagement())
+                                }
+                            )
+                            FabMenuItem(
                                 icon = if (viewMode == ReminderViewMode.CARD) {
                                     Icons.AutoMirrored.Filled.ViewList
                                 } else {
