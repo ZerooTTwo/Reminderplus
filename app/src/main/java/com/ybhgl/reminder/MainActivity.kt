@@ -2818,7 +2818,6 @@ private fun FloatingSegmentedTabs(
                         lerp(unselectedTextColor, selectedTextColor, selectionProgress)
                     }
                     val label = tab.title
-                    }
                     val interactionSource = remember(index) { MutableInteractionSource() }
                     Box(
                         modifier = Modifier
