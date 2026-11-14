@@ -30,10 +30,21 @@ object ManualWebDavBackup {
     )
 
     /** 生成与「手动备份」一致的备份文件名 */
+    /** 便签备份专用子目录（与自动备份的 Auto/ 完全分开，互不干扰） */
+    const val NOTES_FOLDER = "Notes"
+
+    /** 便签备份文件名：reminder-notes-yyyyMMdd-HHmmss.zip */
     fun generateFileName(): String {
         val timestamp = LocalDateTime.now()
             .format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss", Locale.getDefault()))
-        return "reminder-backup-$timestamp${BackupArchiveManager.BACKUP_EXTENSION}"
+        return "reminder-notes-$timestamp${BackupArchiveManager.BACKUP_EXTENSION}"
+    }
+
+    /** 便签同步目录：WebDAV 路径 + /Notes */
+    fun notesPath(path: String): String = when {
+        path.isBlank() -> NOTES_FOLDER
+        path.endsWith("/") -> "$path$NOTES_FOLDER"
+        else -> "$path/$NOTES_FOLDER"
     }
 
     suspend fun upload(context: Context): Result = withContext(Dispatchers.IO) {
@@ -68,10 +79,17 @@ object ManualWebDavBackup {
 
         val fileName = generateFileName()
 
-        return@withContext when (val result = WebDavClient.uploadFileBytes(server, username, password, path, fileName, archiveBytes)) {
+        // 便签单独放 Notes/ 子目录，避免与自动备份（Auto/）互相干扰
+        val uploadPath = notesPath(path)
+
+        return@withContext when (val result = WebDavClient.uploadFileBytes(server, username, password, uploadPath, fileName, archiveBytes)) {
             is WebDavResult.Success -> {
                 BackupPreferences.saveLastBackupTimestamp(context, System.currentTimeMillis())
-                Result(success = true, message = "已上传到 WebDAV：$fileName（含 ${notes.size} 条便签）", fileName = fileName)
+                Result(
+                    success = true,
+                    message = "已上传到 WebDAV/${NOTES_FOLDER}：$fileName（含 ${notes.size} 条便签）",
+                    fileName = fileName
+                )
             }
             is WebDavResult.Failure -> {
                 val hint = when (result.code) {

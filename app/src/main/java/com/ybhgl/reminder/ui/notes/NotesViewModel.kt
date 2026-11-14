@@ -256,7 +256,8 @@ class NotesViewModel(
                         return@runCatching "请先在「设置 → 备份与恢复」中填写并保存 WebDAV 服务器、账号和密码"
                     }
 
-                    val autoPath = if (path.endsWith("/")) "${path}Auto" else "$path/Auto"
+                    // 便签只从专属目录 Notes/ 读取，不再扫描根目录与 Auto/（自动备份不包含便签）
+                    val notesDir = ManualWebDavBackup.notesPath(path)
 
                     fun listBackups(dir: String): List<Pair<String, String>> {
                         val listing = WebDavClient.listFilesActual(server, user, password, dir)
@@ -266,11 +267,11 @@ class NotesViewModel(
                             .map { dir to it.name }
                     }
 
-                    val candidates = (listBackups(path) + listBackups(autoPath))
+                    val candidates = listBackups(notesDir)
                         .sortedByDescending { (_, name) -> timestampOf(name) }
 
                     if (candidates.isEmpty()) {
-                        return@runCatching "云端没有找到备份文件（已扫描 $path 与 $autoPath）"
+                        return@runCatching "便签目录（${ManualWebDavBackup.NOTES_FOLDER}/）里还没有备份，请先点「上传」"
                     }
 
                     // 逐个候选尝试：跳过无法下载/无法解密/不含便签的文件，直到找到可用的一份

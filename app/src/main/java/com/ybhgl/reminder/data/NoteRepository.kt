@@ -190,8 +190,13 @@ class NoteRepository(
         return inserted to updated
     }
 
+    /**
+     * 便签不参与「自动备份」：
+     * 自动备份会在云端生成 Auto/ 目录并与便签同步争用同一把锁，导致便签同步失败，
+     * 因此这里只记录数据变更时间，不再触发自动备份。
+     * 便签通过网络同步时由便签页的「上传」按钮单独上传到专属文件夹。
+     */
     private suspend fun notifyDataChanged() {
         BackupPreferences.saveLastDataChangeTimestamp(context, System.currentTimeMillis())
-        BackupPreferences.triggerAutoBackup(context)
     }
 }
