@@ -1094,7 +1094,7 @@ data class ReminderCardVisuals(
 private enum class ReminderTab(val title: String, val filter: (ReminderItem) -> Boolean) {
     COUNTDOWN("倒数", { it.type == ReminderType.ANNUAL }),
     COUNTUP("正数", { it.type == ReminderType.COUNT_UP }),
-    BIRTHDAY("生日", { it.type == ReminderType.BIRTHDAY })
+    BIRTHDAY("纪念日", { it.type == ReminderType.BIRTHDAY })
 }
 
 data class ReminderDisplayInfo(

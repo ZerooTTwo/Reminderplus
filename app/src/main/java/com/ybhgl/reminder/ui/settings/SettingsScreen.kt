@@ -1136,7 +1136,7 @@ private fun HomePageSettingsCard(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "开启后首页按倒数、正数、生日分类显示；关闭后所有事件统一显示",
+                        text = "开启后首页按倒数、正数、纪念日分类显示；关闭后所有事件统一显示",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -1237,7 +1237,7 @@ private fun DefaultPageSegmentedControl(
         AppDefaultPage.CALENDAR to "日历",
         AppDefaultPage.COUNTDOWN to "倒数",
         AppDefaultPage.COUNTUP to "正数",
-        AppDefaultPage.BIRTHDAY to "生日",
+        AppDefaultPage.BIRTHDAY to "纪念日",
         AppDefaultPage.EVENTS to "事件"
     )
     val segmentCount = options.size.coerceAtLeast(1)
