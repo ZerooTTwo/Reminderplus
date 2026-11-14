@@ -586,11 +586,11 @@ fun SettingsScreen(
                     }
                 )
                 SettingsActionItem(
-                    title = "ybhgl/Reminder",
-                    description = "在 GitHub 查看项目源码",
+                    title = "ZerooTTwo/Reminderplus",
+                    description = "在 GitHub 查看本项目源码",
                     icon = { Icon(ImageVector.vectorResource(id = R.drawable.ic_github), null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp)) },
                     onClick = {
-                        val intent = Intent(Intent.ACTION_VIEW, "https://github.com/ybhgl/Reminder".toUri())
+                        val intent = Intent(Intent.ACTION_VIEW, "https://github.com/ZerooTTwo/Reminderplus".toUri())
                         context.startActivity(intent)
                     }
                 )

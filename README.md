@@ -25,7 +25,7 @@
 **上游归属链：**
 
 ```
-lentikr/Reminder  →  ybhgl/Reminder  →  ZerooTTwo/Reminder-（本仓库，Reminder+）
+lentikr/Reminder  →  ybhgl/Reminder  →  ZerooTTwo/Reminderplus（本仓库，Reminder+）
 ```
 
 本仓库在 [ybhgl/Reminder](https://github.com/ybhgl/Reminder)（其本身 fork 自 [lentikr/Reminder](https://github.com/lentikr/Reminder)）的基础上继续开发，上游已有的全部功能均予保留，感谢两位原作者的贡献。

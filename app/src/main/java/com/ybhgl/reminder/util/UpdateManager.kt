@@ -57,8 +57,8 @@ enum class UpdateCheckResult {
  */
 object UpdateManager {
 
-    private const val OWNER = "ybhgl"
-    private const val REPO = "Reminder"
+    private const val OWNER = "ZerooTTwo"
+    private const val REPO = "Reminderplus"
     private const val LATEST_RELEASE_API = "https://api.github.com/repos/$OWNER/$REPO/releases/latest"
 
     private val jsonParser = Json { ignoreUnknownKeys = true }
