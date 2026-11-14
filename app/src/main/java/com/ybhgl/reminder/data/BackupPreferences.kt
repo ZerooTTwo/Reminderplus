@@ -333,7 +333,7 @@ object BackupPreferences {
 
             val tags = ReminderDatabase.getDatabase(context).tagDao().getAllTags()
 
-            val backupData = com.ybhgl.reminder.data.BackupDataBuilder.build(context, reminders, tags)
+            val backupData = com.ybhgl.reminder.data.BackupDataBuilder.build(context, reminders, tags).copy(notes = null, noteCategories = null)
             val json = kotlinx.serialization.json.Json.encodeToString(backupData)
             val imageFiles = com.ybhgl.reminder.util.CardBackgroundImageManager.collectImageFiles(context, reminders)
             val fontFiles = com.ybhgl.reminder.util.FontManager.collectFontFiles(context, reminders)

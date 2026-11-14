@@ -116,7 +116,7 @@ class BackupAndRestoreViewModel(
                 return@withContext "没有可备份的数据"
             }
 
-            val backupData = BackupDataBuilder.build(context, reminders, tagRepository.getAllTags())
+            val backupData = BackupDataBuilder.build(context, reminders, tagRepository.getAllTags()).copy(notes = null, noteCategories = null)
             val json = Json.encodeToString(backupData)
             val imageFiles = com.ybhgl.reminder.util.CardBackgroundImageManager.collectImageFiles(context, reminders)
             val fontFiles = com.ybhgl.reminder.util.FontManager.collectFontFiles(context, reminders)
@@ -192,7 +192,7 @@ class BackupAndRestoreViewModel(
             return@withContext "没有可备份的数据"
         }
 
-        val backupData = BackupDataBuilder.build(context, reminders, tagRepository.getAllTags())
+        val backupData = BackupDataBuilder.build(context, reminders, tagRepository.getAllTags()).copy(notes = null, noteCategories = null)
         val json = Json.encodeToString(backupData)
         val imageFiles = com.ybhgl.reminder.util.CardBackgroundImageManager.collectImageFiles(context, reminders)
         val fontFiles = com.ybhgl.reminder.util.FontManager.collectFontFiles(context, reminders)
