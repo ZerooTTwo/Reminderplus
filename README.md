@@ -1,14 +1,15 @@
 <div align="center">
 
-# Reminder
+# Reminder+
 
 <img src="./app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp" width="120px" style="border-radius:12px"/>
 
-### 一款 Material 3 风格的安卓纪念日 / 倒数日管理应用
+### 一款 Material 3 风格的安卓纪念日 / 倒数日 / 便签管理应用
 
 ![Android](https://img.shields.io/badge/Platform-Android-green?logo=android)
 ![Jetpack Compose](https://img.shields.io/badge/UI-Jetpack%20Compose-blue)
 ![Material 3](https://img.shields.io/badge/Design-Material%203-6750A4)
+![Version](https://img.shields.io/badge/Version-1.0.0-blue)
 ![License](https://img.shields.io/badge/License-GPLv3-orange)
 
 </div>
@@ -17,17 +18,74 @@
 
 ## 项目简介
 
-Reminder 是一款简洁的安卓纪念日 / 倒数日管理应用，支持倒数与正数两种模式，帮助你轻松掌握重要日期。应用完全使用 **Jetpack Compose** 构建，全面对齐 Material 3 设计标准。
+**Reminder+** 是一款简洁的安卓纪念日 / 倒数日管理应用，支持倒数与正数两种模式，帮助你轻松掌握重要日期。应用完全使用 **Jetpack Compose** 构建，全面对齐 Material 3 设计标准。
 
-本项目 fork 自 [lentikr/Reminder](https://github.com/lentikr/Reminder)，在原有基础上加入了多项分支独有功能，感谢原作者的贡献！
+在本仓库（个人自用分支）中，额外加入了**便签模块**，并调整了分类命名与应用标识。
+
+**上游归属链：**
+
+```
+lentikr/Reminder  →  ybhgl/Reminder  →  ZerooTTwo/Reminder-（本仓库，Reminder+）
+```
+
+本仓库在 [ybhgl/Reminder](https://github.com/ybhgl/Reminder)（其本身 fork 自 [lentikr/Reminder](https://github.com/lentikr/Reminder)）的基础上继续开发，上游已有的全部功能均予保留，感谢两位原作者的贡献。
+
+## 应用信息
+
+| 项 | 值 |
+| --- | --- |
+| 应用名 | Reminder+ |
+| applicationId | `com.zt.reminderplus` |
+| 版本 | 1.0.0（versionCode 1） |
+| 最低系统 | Android 9（API 28） |
+| 架构 | arm64-v8a |
+| 包体 | 约 7 MB |
 
 > [!CAUTION]
-> **注意事项：**
-> 由于应用包名不同，系统会视其为一个**全新的应用**。你将无法直接覆盖安装老版本。在安装此版本前，请务必先**备份老版本的数据**，卸载老版本后再安装新版本，并使用内置的 JSON 备份导入功能恢复数据。
+> 由于包名（`com.zt.reminderplus`）与上游 `com.ybhgl.reminder` 不同，系统会视其为**全新应用**，可与原版 Reminder **共存安装**，但**不共享数据**。
+> 如需迁移原版数据：先在原版中「设置 → 备份与恢复」导出 JSON 备份，再在 Reminder+ 中导入。
+
+## 本分支的改动
+
+### 📝 便签模块（新增）
+
+- **独立分类：** 便签使用自己的分类体系（与提醒的标签互不影响），可增删改、每个分类可选 15 种颜色
+- **列表与检索：** 关键词搜索（标题 + 正文）、按分类筛选、置顶、显示分类色点与更新时间
+- **编辑：** 标题可留空（自动取正文首个非空行作标题）、正文多行、单选分类；返回即自动保存
+- **删除：** 二次确认，删除后不可恢复
+- **入口：** 首页顶栏的便签图标（搜索图标左侧）
+
+### ☁️ 便签与 WebDAV
+
+- 便签已纳入应用**统一的备份数据**（`BackupData.notes` / `noteCategories`），手动备份、自动备份、加密 zip 打包都天然包含便签
+- 便签页顶栏两个按钮：
+  - **上传**：强制触发一次统一备份（含便签），复用既有的加密 + WebDAV 上传链路
+  - **恢复**：拉取云端最新一次自动备份，**仅把其中的便签合并回本机**，不会覆盖本机的提醒数据
+- 前置条件：先在「设置 → 备份与恢复」填好 WebDAV 服务器 / 账号 / 路径，并开启「WebDAV 自动备份」
+
+### 🗂 分类命名调整
+
+- 首页底栏第三类由「生日」改为「**纪念日**」
+- 设置页「默认页面」「首页分类」的相关措辞同步调整
+- 详情页的「生日档案 / 生日列表 / N 岁生日」保持原样（那里确实指生日）
+
+### ⚙️ 应用标识
+
+- 应用名改为 `Reminder+`，applicationId 改为 `com.zt.reminderplus`，版本重置为 `1.0.0 (1)`
+- 内部 Kotlin 命名空间仍为 `com.ybhgl.reminder`（保持与上游同步的便利，仅安装标识独立）
+- 数据库版本 `17 → 18`：新增 `notes`、`note_categories` 两张表
 
 ## 功能概览
 
-### ✨ 分支新增特性
+### 📌 倒数 / 正数 / 纪念日
+
+- **倒数日与正数日：** 倒数日提醒生日、纪念日等未来事件；正数日记录"来到世界的第 N 天"；支持农历并可选自动换算下一个农历日期
+- **分组与置顶：** 为每个提醒设置分类快速整理，重要提醒置顶显示
+- **重复周期：** 支持设置重复周期（x 天、x 周、x 月、x 年）
+- **分享与导出：** 以图片形式保存或分享纪念日
+- **外观设置：** 自动 / 浅色 / 深色三种主题模式；深色模式下可启用纯黑主题适配 AMOLED；卡片化与列表两种布局
+
+### ✨ 上游已有特性（本分支同样具备）
 
 - **界面焕然一新：** 全新的视觉设计与流畅动画；可自由定制每条提醒的颜色、图标和背景，模糊与液态玻璃质感效果更加通透真实，还能统一显示所有事件、滚动时自动收起底栏，大屏和横屏下显示效果也更好
 - **日历与黄历：** 首页右滑即可打开日历视图，月视图同步显示农历、节气与节日，并自动同步在线节假日，放假与补班一眼可见；点选日期可查看当天宜忌与提醒、直接新建提醒，还提供老黄历详情与择日页面，宜忌、值神等术语点开即有白话解释
@@ -43,18 +101,23 @@ Reminder 是一款简洁的安卓纪念日 / 倒数日管理应用，支持倒�
 - **通知新玩法：** 多种通知样式可选：普通通知、实时提醒，小米手机还支持灵动岛
 - **更多细节：** 自定义启动页、权限管理与联网控制、预测性返回手势、应用内检查更新、多标签整理与高级搜索，以及大量体验细节优化
 
-### 📌 原有基础功能
+## 构建
 
-- **倒数日与正数日：** 倒数日提醒生日、纪念日等未来事件；正数日记录"来到世界的第 N 天"；支持农历并可选自动换算下一个农历日期
-- **分组与置顶：** 为每个提醒设置分类快速整理，重要提醒置顶显示
-- **重复周期：** 支持设置重复周期（x 天、x 周、x 月、x 年）
-- **分享与导出：** 以图片形式保存或分享纪念日
-- **外观设置：** 自动 / 浅色 / 深色三种主题模式；深色模式下可启用纯黑主题适配 AMOLED；卡片化与列表两种布局
+本仓库使用 GitHub Actions 构建，工作流为仓库内的 `.github/workflows/release.yml`：
+
+1. 在仓库 Settings → Secrets and variables → Actions 中配置
+   - `SIGNING_KEY_ENCODED`：release keystore 的 Base64
+   - `SIGNING_CONFIG`：`local.properties` 内容（`storeFile=app.key`、`storePassword`、`keyAlias`、`keyPassword`）
+2. 推送 `v*` 形式的 tag（例如 `v1.0.0`），自动构建签名 release APK 并创建 Release
+3. 产物：`Reminder-v<versionName>-arm64-v8a-release.apk`
+
+本地构建需要 JDK 21 + Android SDK（platform 37 / build-tools 37），执行 `./gradlew assembleRelease`。
 
 ## 开源致谢
 
-Reminder 的实现受益于以下上游项目与开源组件，感谢所有贡献者：
+本项目的实现受益于以下上游项目与开源组件，感谢所有贡献者：
 
+- [ybhgl/Reminder](https://github.com/ybhgl/Reminder)：本仓库的直接上游；
 - [lentikr/Reminder](https://github.com/lentikr/Reminder)：上游原始项目；
 - [Tyme](https://github.com/6tail/tyme4kt)：强大的公农历 / 干支 / 星座换算日历工具库；
 - [Accompanist](https://github.com/google/accompanist)：权限申请与分页指示组件；
@@ -67,11 +130,15 @@ Reminder 的实现受益于以下上游项目与开源组件，感谢所有贡�
 
 ## 许可证与第三方声明
 
-Reminder 主体代码以 [GNU General Public License v3](LICENSE) 发布。任何二次分发或衍生作品须遵循 GPLv3 条款同样开源。
+本项目主体代码以 [GNU General Public License v3](LICENSE) 发布，继承自上游。任何二次分发或衍生作品须遵循 GPLv3 条款同样开源。
+
+本仓库为**个人自用分支**，仅自行构建安装使用，不对外分发；若后续公开分发改版 APK，需一并公开修改后的完整源码并保留原始版权声明。
 
 第三方库不因本项目的 GPLv3 而自动转为 GPLv3，各自遵循其原始许可证（主要为 Apache License 2.0 与 MIT）。完整的依赖清单、版本号、许可证类型及项目链接，请查看应用内 **设置 → 关于 → 开放源代码许可** 页面。
 
 ## 软件界面预览
+
+> 以下截图来自上游版本，界面风格与本项目一致；本分支新增的**便签页**尚未截图。
 
 <table align="center">
   <tr>
@@ -95,9 +162,12 @@ Reminder 主体代码以 [GNU General Public License v3](LICENSE) 发布。任�
   <img src="./screenshots/share.png" width="300" alt="分享卡片效果">
 </p>
 
-## 反馈与贡献
+## 反馈
 
-欢迎在 [Issues](https://github.com/ybhgl/Reminder/issues) 中提交 bug 反馈或功能建议，也欢迎直接提交 Pull Request 参与改进。如果这个项目对你有帮助，别忘了点个 Star 支持一下。
+本仓库为个人自用分支，不接收外部 Pull Request。上游项目的 bug 反馈与功能建议请提交至：
+
+- [ybhgl/Reminder Issues](https://github.com/ybhgl/Reminder/issues)
+- [lentikr/Reminder](https://github.com/lentikr/Reminder)
 
 ## 免责声明
 
