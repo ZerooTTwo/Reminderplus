@@ -474,10 +474,13 @@ class BackupAndRestoreViewModel(
             }
 
             // 便签：按「创建时间 + 标题」判重合并，分类按名称复用
-            val (noteInserted, noteUpdated) = noteRepository.restoreMerge(
-                backupData.notes.orEmpty(),
-                backupData.noteCategories
-            )
+            // 备份里没有便签字段（自动/手动备份已排除便签）时，完全不动本机便签
+            val noteBackup = backupData.notes
+            val (noteInserted, noteUpdated) = if (noteBackup != null) {
+                noteRepository.restoreMerge(noteBackup, backupData.noteCategories)
+            } else {
+                0 to 0
+            }
             val noteSummary = buildString {
                 if (noteInserted > 0) append("、便签新增 $noteInserted 条")
                 if (noteUpdated > 0) append("、便签更新 $noteUpdated 条")
@@ -519,10 +522,10 @@ class BackupAndRestoreViewModel(
             backupData.homeCategoryEnabled?.let { saveHomeCategory(context, it) }
 
             // 便签：整体覆盖恢复
-            val restoredNoteCount = noteRepository.restoreReplace(
-                backupData.notes.orEmpty(),
-                backupData.noteCategories
-            )
+            // 备份里没有便签字段时跳过便签，避免覆盖恢复把本机便签清空
+            val restoredNoteCount = backupData.notes?.let { notes ->
+                noteRepository.restoreReplace(notes, backupData.noteCategories)
+            } ?: 0
 
             // Update last backup to clear warning
             BackupPreferences.saveLastBackupTimestamp(context, System.currentTimeMillis())
