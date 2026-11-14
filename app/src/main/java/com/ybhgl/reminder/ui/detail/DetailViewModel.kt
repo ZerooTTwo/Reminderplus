@@ -35,7 +35,7 @@ class DetailViewModel(
     private val _snackbarMessage = MutableSharedFlow<String>()
     val snackbarMessage = _snackbarMessage.asSharedFlow()
 
-    /** 按 id 直查的单事件最新值：保险柜事件不在活跃流中，靠它驱动详情页实时刷新 */
+    /** 按 id 直查的单事件最新值：不在活跃流中的事件（如回收站内事件）靠它驱动详情页实时刷新 */
     private val directReminder = MutableStateFlow<ReminderItem?>(null)
 
     init {
@@ -98,7 +98,7 @@ class DetailViewModel(
                         )
                     }
                 } else if (direct != null) {
-                    // 隐私事件（保险柜）：由单事件流最新值直接驱动，编辑返回后实时更新
+                    // 非活跃事件：由单事件流最新值直接驱动，编辑返回后实时更新
                     _uiState.update {
                         it.copy(
                             reminderItems = listOf(direct),
@@ -142,8 +142,8 @@ class DetailViewModel(
             val updatedReminder = reminder.copy(notes = newNotes)
             reminderRepository.updateReminder(updatedReminder)
             val app = context.applicationContext
-            if (updatedReminder.isInRecycleBin || updatedReminder.isInSafe) {
-                // 回收站/保险柜事件不产生系统侧调度，顺带清理可能的历史残留
+            if (updatedReminder.isInRecycleBin) {
+                // 回收站事件不产生系统侧调度，顺带清理可能的历史残留
                 ReminderScheduler.cancelReminder(app, updatedReminder)
                 CalendarManager.deleteEvent(app, updatedReminder)
             } else {
@@ -151,17 +151,6 @@ class DetailViewModel(
                 CalendarManager.addOrUpdateEvent(app, updatedReminder)
                 ReminderScheduler.updateActiveNotification(app, updatedReminder)
             }
-        }
-    }
-
-    /**
-     * 详情页单事件移出保险柜：复用 Repository 的 restoreFromSafe 链路
-     * （清标记 + 重建闹钟/日历/Widget 调度），事件回到活跃流后详情页自动刷新。
-     */
-    fun removeFromSafe(reminder: ReminderItem) {
-        viewModelScope.launch {
-            reminderRepository.restoreFromSafe(setOf(reminder.id))
-            _snackbarMessage.emit("已移出保险柜：${reminder.title}")
         }
     }
 

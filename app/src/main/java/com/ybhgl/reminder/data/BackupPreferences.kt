@@ -320,7 +320,7 @@ object BackupPreferences {
             autoBackupStatusFlow.value = "BACKUPING"
 
             val actualRepository = reminderRepository ?: (context.applicationContext as? com.ybhgl.reminder.ReminderApplication)?.container?.reminderRepository
-            // 备份数据源含保险柜事件：isInSafe 随序列化保留，恢复备份时直接回到保险柜
+            // 备份数据源：不含回收站
             val reminders = actualRepository?.getBackupRemindersStream()?.first()
                 ?: ReminderDatabase.getDatabase(context).reminderDao().getBackupRemindersList()
 

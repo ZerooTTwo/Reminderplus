@@ -73,6 +73,12 @@ class NoteRepository(
         notifyDataChanged()
     }
 
+    /** 设置分类是否隐藏（仅影响筛选展示，不删除分类与便签） */
+    suspend fun setCategoryHidden(id: Int, hidden: Boolean) {
+        noteCategoryDao.setHidden(id, hidden)
+        notifyDataChanged()
+    }
+
     /** 删除分类，该分类下的便签回到「未分类」，不丢数据 */
     suspend fun deleteCategoryAndDetachNotes(category: NoteCategoryItem) {
         noteCategoryDao.delete(category)

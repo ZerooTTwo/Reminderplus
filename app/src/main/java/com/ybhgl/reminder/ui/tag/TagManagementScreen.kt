@@ -59,6 +59,8 @@ import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.material.icons.filled.Reorder
 import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -220,6 +222,7 @@ fun TagManagementScreen(
                             isSortMode = uiState.isSortMode,
                             onEditClick = { editingTag = tag },
                             onDeleteClick = { tagToDelete = tag },
+                            onToggleHidden = { viewModel.setTagHidden(tag, !tag.isHidden) },
                             draggingIndex = draggingIndex,
                             dragOffsetY = dragOffsetY,
                             onDragStart = { draggingIndex = it; dragOffsetY = 0f },
@@ -355,6 +358,7 @@ private fun TagRowItem(
     isSortMode: Boolean,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
+    onToggleHidden: () -> Unit,
     draggingIndex: Int?,
     dragOffsetY: Float,
     onDragStart: (Int) -> Unit,
@@ -413,16 +417,20 @@ private fun TagRowItem(
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            // 标签名称
+            // 标签名称（隐藏状态用弱化颜色并追加标记）
             Text(
-                text = tag.name,
+                text = if (tag.isHidden) "${tag.name}（已隐藏）" else tag.name,
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 16.sp
                 ),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                color = MaterialTheme.colorScheme.onSurface,
+                color = if (tag.isHidden) {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                },
                 modifier = Modifier.weight(1f)
             )
 
@@ -468,6 +476,17 @@ private fun TagRowItem(
                         Icon(
                             imageVector = Icons.Default.Edit,
                             contentDescription = "修改",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    IconButton(onClick = onToggleHidden) {
+                        Icon(
+                            imageVector = if (tag.isHidden) {
+                                Icons.Default.VisibilityOff
+                            } else {
+                                Icons.Default.Visibility
+                            },
+                            contentDescription = if (tag.isHidden) "显示标签" else "隐藏标签",
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }

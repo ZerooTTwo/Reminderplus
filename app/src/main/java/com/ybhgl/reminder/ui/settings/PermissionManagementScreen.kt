@@ -442,7 +442,7 @@ fun PermissionManagementScreen(
                     )
                 PermissionInfoRow(
                     title = "生物识别",
-                    description = "用于解锁应用锁与保险柜",
+                    description = "用于解锁应用锁",
                     icon = { Icon(Icons.Filled.Fingerprint, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp)) },
                     statusLabel = if (biometricAvailable) "可用" else "不可用",
                     statusColor = if (biometricAvailable) {

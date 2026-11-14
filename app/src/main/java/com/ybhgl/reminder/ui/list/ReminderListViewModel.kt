@@ -96,16 +96,6 @@ class ReminderListViewModel(
         }
     }
 
-    /** 将选中提醒移入保险柜（隐私收纳：取消闹钟/日历，仍参与备份） */
-    fun moveSelectedToSafe() {
-        val idsToMove = selectedIds.value
-        if (idsToMove.isEmpty()) return
-        viewModelScope.launch {
-            reminderRepository.moveToSafe(idsToMove)
-            exitSelectionMode()
-        }
-    }
-
     companion object {
         private const val TIMEOUT_MILLIS = 5_000L
     }

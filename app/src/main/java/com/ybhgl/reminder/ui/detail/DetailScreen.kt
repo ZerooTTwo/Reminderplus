@@ -114,7 +114,7 @@ fun DetailScreen(
 
     LaunchedEffect(Unit) {
         viewModel.snackbarMessage.collect { message ->
-            // 详情页统一使用项目自绘 Toast 反馈（如移出保险柜成功提示）
+            // 详情页统一使用项目自绘 Toast 反馈
             CustomToast.showSuccess(context, message)
         }
     }
@@ -192,7 +192,7 @@ fun DetailScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // rememberPagerState 的 pageCount lambda 仅在 state 创建帧被捕获：
-                // 详情页从"保险柜单项列表"移出后 1→N 规模突变，旧 state 页数恒为 1，
+                // 详情页列表规模 1→N 突变时，旧 state 页数恒为 1，
                 // 一切事后 scrollToPage 都被无声钳制回页 0（实机"瞬间变第一个事件、
                 // 无闪烁"定案）。用 key(列表大小) 重建整个 pager 子组合：pagerState
                 // 与页数 lambda 同帧同源生成、初始页直接落在当前事件，从构造上消除
@@ -341,8 +341,6 @@ fun ReminderDetailPagerContent(
     val context = LocalContext.current
     val isLunarEnabled = showLunarMap[displayReminderItem.id] ?: displayReminderItem.isLunar
     val isFlipped = showNotesMap[displayReminderItem.id] ?: false
-    // 已加密事件：badge 栏 lock 图标触发的“移出保险柜”确认弹窗
-    var showMoveOutConfirm by remember { mutableStateOf(false) }
 
     val cardContent = @Composable { modifier: Modifier ->
         ReminderDetailCard(
@@ -447,10 +445,8 @@ fun ReminderDetailPagerContent(
             )
         }
 
-        // 提醒设置入口：已开启提醒且配置了提醒时间时高亮（M3 主题色）；
-        // 保险柜事件的闹钟已随移入取消，实际不会提醒，故不着色（与提醒设置页置灰口径一致）
-        val hasActiveNotification = !displayReminderItem.isInSafe &&
-            displayReminderItem.notificationConfig.isEnabled &&
+        // 提醒设置入口：已开启提醒且配置了提醒时间时高亮（M3 主题色）
+        val hasActiveNotification = displayReminderItem.notificationConfig.isEnabled &&
             displayReminderItem.notificationConfig.notificationTimes.isNotEmpty()
         val notificationBaseColor = MaterialTheme.colorScheme.primary
         val (notificationContainerColor, notificationContentColor, notificationBorderColor) = if (hasActiveNotification) {
@@ -485,23 +481,6 @@ fun ReminderDetailPagerContent(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Start
                     ) {
-                        if (displayReminderItem.isInSafe) {
-                            OutlinedIconButton(
-                                onClick = { showMoveOutConfirm = true },
-                                modifier = Modifier.size(36.dp),
-                                colors = IconButtonDefaults.outlinedIconButtonColors(
-                                    containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                                    contentColor = MaterialTheme.colorScheme.primary
-                                ),
-                                border = androidx.compose.foundation.BorderStroke(
-                                    1.dp,
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
-                                )
-                            ) {
-                                Icon(Icons.Default.Lock, contentDescription = "移出保险柜", modifier = Modifier.size(20.dp))
-                            }
-                            Spacer(modifier = Modifier.width(12.dp))
-                        }
                         TagBadge(
                             tagName = displayReminderItem.tag,
                             tagColorHex = matchedTag?.color,
@@ -552,23 +531,6 @@ fun ReminderDetailPagerContent(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
-                if (displayReminderItem.isInSafe) {
-                    OutlinedIconButton(
-                        onClick = { showMoveOutConfirm = true },
-                        modifier = Modifier.size(32.dp),
-                        colors = IconButtonDefaults.outlinedIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                            contentColor = MaterialTheme.colorScheme.primary
-                        ),
-                        border = androidx.compose.foundation.BorderStroke(
-                            1.dp,
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
-                        )
-                    ) {
-                        Icon(Icons.Default.Lock, contentDescription = "移出保险柜", modifier = Modifier.size(18.dp))
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                }
                 TagBadge(
                     tagName = displayReminderItem.tag,
                     tagColorHex = matchedTag?.color,
@@ -713,21 +675,6 @@ fun ReminderDetailPagerContent(
                 tagsAndOptionsContent()
             }
         }
-    }
-
-    // 移出保险柜确认弹窗：复用保险柜页 AppAlertDialog 样式与文案口径
-    if (showMoveOutConfirm) {
-        AppAlertDialog(
-            onDismissRequest = { showMoveOutConfirm = false },
-            title = "移出保险柜",
-            text = "「${displayReminderItem.title}」将恢复到主页列表，并重新开启提醒",
-            confirmText = "移出",
-            onConfirm = {
-                showMoveOutConfirm = false
-                viewModel.removeFromSafe(displayReminderItem)
-            },
-            dismissText = "取消"
-        )
     }
 }
 

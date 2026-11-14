@@ -34,6 +34,8 @@ import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -104,6 +106,8 @@ fun NotesScreen(
     val filterCategoryId by viewModel.filterCategoryId.collectAsState()
     val isSyncing by viewModel.isSyncing.collectAsState()
     val syncMessage by viewModel.syncMessage.collectAsState()
+    val hideAllChip by viewModel.hideAllChip.collectAsState()
+    val allNotes by viewModel.allNotes.collectAsState()
 
     var showCategoryDialog by remember { mutableStateOf(false) }
 
@@ -115,6 +119,8 @@ fun NotesScreen(
     }
 
     val categoryNameById = remember(categories) { categories.associateBy { it.id } }
+    // 没有任何「未分类」便签时，自动隐藏「未分类」标签
+    val uncategorizedCount = remember(allNotes) { allNotes.count { it.categoryId == 0 } }
 
     Scaffold(
         topBar = {
@@ -177,21 +183,25 @@ fun NotesScreen(
                 contentPadding = PaddingValues(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                item {
-                    NoteFilterChip(
-                        label = "全部",
-                        selected = filterCategoryId == NotesViewModel.FILTER_ALL,
-                        onClick = { viewModel.setFilterCategory(NotesViewModel.FILTER_ALL) }
-                    )
+                if (!hideAllChip) {
+                    item {
+                        NoteFilterChip(
+                            label = "全部",
+                            selected = filterCategoryId == NotesViewModel.FILTER_ALL,
+                            onClick = { viewModel.setFilterCategory(NotesViewModel.FILTER_ALL) }
+                        )
+                    }
                 }
-                item {
-                    NoteFilterChip(
-                        label = "未分类",
-                        selected = filterCategoryId == NotesViewModel.FILTER_UNCATEGORIZED,
-                        onClick = { viewModel.setFilterCategory(NotesViewModel.FILTER_UNCATEGORIZED) }
-                    )
+                if (uncategorizedCount > 0) {
+                    item {
+                        NoteFilterChip(
+                            label = "未分类",
+                            selected = filterCategoryId == NotesViewModel.FILTER_UNCATEGORIZED,
+                            onClick = { viewModel.setFilterCategory(NotesViewModel.FILTER_UNCATEGORIZED) }
+                        )
+                    }
                 }
-                items(categories, key = { it.id }) { category ->
+                items(categories.filter { !it.isHidden }, key = { it.id }) { category ->
                     NoteFilterChip(
                         label = category.name,
                         selected = filterCategoryId == category.id,
@@ -251,10 +261,13 @@ fun NotesScreen(
     if (showCategoryDialog) {
         NoteCategoryDialog(
             categories = categories,
+            hideAllChip = hideAllChip,
+            onToggleHideAllChip = { viewModel.setHideAllChip(it) },
             onDismiss = { showCategoryDialog = false },
             onAdd = { name, color -> viewModel.addCategory(name, color) },
             onUpdate = { viewModel.updateCategory(it) },
-            onDelete = { viewModel.deleteCategory(it) }
+            onDelete = { viewModel.deleteCategory(it) },
+            onToggleHidden = { viewModel.setCategoryHidden(it, !it.isHidden) }
         )
     }
 }
@@ -407,10 +420,13 @@ private fun NoteCard(
 @Composable
 internal fun NoteCategoryDialog(
     categories: List<NoteCategoryItem>,
+    hideAllChip: Boolean,
+    onToggleHideAllChip: (Boolean) -> Unit,
     onDismiss: () -> Unit,
     onAdd: (String, String) -> Unit,
     onUpdate: (NoteCategoryItem) -> Unit,
-    onDelete: (NoteCategoryItem) -> Unit
+    onDelete: (NoteCategoryItem) -> Unit,
+    onToggleHidden: (NoteCategoryItem) -> Unit
 ) {
     var editing by remember { mutableStateOf<NoteCategoryItem?>(null) }
     var adding by remember { mutableStateOf(false) }
@@ -420,6 +436,24 @@ internal fun NoteCategoryDialog(
         title = { Text("便签分类") },
         text = {
             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                // 「全部」标签可单独隐藏（只隐藏这个标签本身，不影响便签内容）
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "隐藏「全部」标签",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.weight(1f)
+                    )
+                    androidx.compose.material3.Switch(
+                        checked = hideAllChip,
+                        onCheckedChange = onToggleHideAllChip
+                    )
+                }
+                HorizontalDivider()
                 if (categories.isEmpty()) {
                     Text(
                         text = "还没有分类，新建后便签就能分类整理",
@@ -443,12 +477,31 @@ internal fun NoteCategoryDialog(
                         )
                         Spacer(modifier = Modifier.width(10.dp))
                         Text(
-                            text = category.name,
+                            text = if (category.isHidden) "${category.name}（已隐藏）" else category.name,
                             style = MaterialTheme.typography.bodyMedium,
+                            color = if (category.isHidden) {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            } else {
+                                MaterialTheme.colorScheme.onSurface
+                            },
                             modifier = Modifier.weight(1f),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
+                        IconButton(
+                            onClick = { onToggleHidden(category) },
+                            modifier = Modifier.size(28.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (category.isHidden) {
+                                    Icons.Default.VisibilityOff
+                                } else {
+                                    Icons.Default.Visibility
+                                },
+                                contentDescription = if (category.isHidden) "显示分类" else "隐藏分类",
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
                         IconButton(onClick = { onDelete(category) }, modifier = Modifier.size(28.dp)) {
                             Icon(
                                 imageVector = Icons.Default.Delete,

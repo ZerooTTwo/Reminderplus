@@ -141,7 +141,7 @@ fun NoteEditScreen(
                         onClick = { categoryId = 0 }
                     )
                 }
-                items(categories, key = { it.id }) { category ->
+                items(categories.filter { !it.isHidden }, key = { it.id }) { category ->
                     NoteFilterChip(
                         label = category.name,
                         selected = categoryId == category.id,

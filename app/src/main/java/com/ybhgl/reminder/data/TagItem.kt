@@ -17,5 +17,7 @@ data class TagItem(
     val id: Int = 0,
     val name: String,
     val color: String = "#2196F3", // Hex color, e.g. #2196F3 (Default Blue)
-    val sortOrder: Int = 0
+    val sortOrder: Int = 0,
+    /** 是否在首页筛选与管理列表中隐藏 */
+    val isHidden: Boolean = false
 )

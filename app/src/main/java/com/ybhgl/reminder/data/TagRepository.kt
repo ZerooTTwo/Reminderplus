@@ -28,6 +28,12 @@ class TagRepository(
         notifyDataChanged()
     }
 
+    /** 设置标签是否隐藏（仅影响首页筛选与管理列表展示，不删除数据） */
+    suspend fun setTagHidden(id: Int, hidden: Boolean) {
+        tagDao.setHidden(id, hidden)
+        notifyDataChanged()
+    }
+
     suspend fun updateTagSortOrders(tags: List<TagItem>) {
         tagDao.updateTagSortOrders(tags)
         notifyDataChanged()

@@ -32,23 +32,14 @@ fun AppLockVerifyScreen(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val coroutineScope = rememberCoroutineScope()
-    val isSafe = mode == PasswordMode.SAFE
 
     var existingPassword by remember { mutableStateOf<String?>(null) }
     var useBiometric by remember { mutableStateOf(false) }
     var hasPromptedBiometric by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        existingPassword = if (isSafe) {
-            SecurityPreferences.safeGesturePasswordFlow(context).first()
-        } else {
-            SecurityPreferences.gesturePasswordFlow(context).first()
-        }
-        useBiometric = if (isSafe) {
-            SecurityPreferences.safeUseBiometricFlow(context).first()
-        } else {
-            SecurityPreferences.useBiometricFlow(context).first()
-        }
+        existingPassword = SecurityPreferences.gesturePasswordFlow(context).first()
+        useBiometric = SecurityPreferences.useBiometricFlow(context).first()
     }
 
     fun triggerBiometric(isManual: Boolean = false) {
@@ -65,7 +56,7 @@ fun AppLockVerifyScreen(
                 BiometricHelper.showBiometricPrompt(
                     activity = activity,
                     title = "验证身份",
-                    subtitle = if (isSafe) "验证身份以进入保险柜" else "验证身份以继续操作",
+                    subtitle = "验证身份以继续操作",
                     negativeButtonText = "使用手势密码",
                     onSuccess = { onUnlockSuccess() },
                     onError = { _, _ -> /* Fallback to gesture */ }
@@ -90,7 +81,7 @@ fun AppLockVerifyScreen(
 
     var lockState by remember { mutableStateOf(GestureLockState.NORMAL) }
     var message by remember {
-        mutableStateOf(if (isSafe) "请绘制保险柜手势密码" else "请绘制手势密码解锁")
+        mutableStateOf("请绘制手势密码解锁")
     }
 
     Surface(
@@ -132,7 +123,7 @@ fun AppLockVerifyScreen(
                 onPathStart = {
                     if (lockState == GestureLockState.ERROR) {
                         lockState = GestureLockState.NORMAL
-                        message = if (isSafe) "请绘制保险柜手势密码" else "请绘制手势密码解锁"
+                        message = "请绘制手势密码解锁"
                     }
                 },
                 onPathComplete = { path ->

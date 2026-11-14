@@ -9,6 +9,7 @@ import com.ybhgl.reminder.data.ManualWebDavBackup
 import com.ybhgl.reminder.data.NoteCategoryItem
 import com.ybhgl.reminder.data.NoteItem
 import com.ybhgl.reminder.data.NoteRepository
+import com.ybhgl.reminder.data.NotesUiPreferences
 import com.ybhgl.reminder.util.BackupArchiveManager
 import com.ybhgl.reminder.util.WebDavClient
 import com.ybhgl.reminder.util.WebDavDownloadBytesResult
@@ -66,13 +67,31 @@ class NotesViewModel(
         noteRepository.getAllCategoriesFlow()
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    /** 「全部」标签是否被用户手动隐藏（只隐藏标签，不影响内容） */
+    val hideAllChip: StateFlow<Boolean> =
+        NotesUiPreferences.hideAllChipFlow(appContext)
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
+    fun setHideAllChip(hide: Boolean) {
+        viewModelScope.launch { NotesUiPreferences.saveHideAllChip(appContext, hide) }
+    }
+
+    /** 未筛选的便签全集：用于判断「未分类」标签是否还有内容 */
+    val allNotes: StateFlow<List<NoteItem>> =
+        noteRepository.getAllNotesFlow()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
     val notes: StateFlow<List<NoteItem>> = combine(
         noteRepository.getAllNotesFlow(),
         _query,
-        _filterCategoryId
-    ) { list, keyword, filterId ->
+        _filterCategoryId,
+        categories
+    ) { list, keyword, filterId, categoryList ->
         val trimmed = keyword.trim()
+        // 隐藏分类 = 连同该分类下的便签一起隐藏
+        val hiddenCategoryIds = categoryList.filter { it.isHidden }.map { it.id }.toSet()
         list.filter { note ->
+            val notInHiddenCategory = note.categoryId == 0 || note.categoryId !in hiddenCategoryIds
             val matchCategory = when {
                 filterId == FILTER_ALL -> true
                 filterId == FILTER_UNCATEGORIZED -> note.categoryId == 0
@@ -81,7 +100,7 @@ class NotesViewModel(
             val matchKeyword = trimmed.isEmpty() ||
                 note.title.contains(trimmed, ignoreCase = true) ||
                 note.content.contains(trimmed, ignoreCase = true)
-            matchCategory && matchKeyword
+            notInHiddenCategory && matchCategory && matchKeyword
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
@@ -187,6 +206,17 @@ class NotesViewModel(
         viewModelScope.launch {
             noteRepository.deleteCategoryAndDetachNotes(category)
             if (_filterCategoryId.value == category.id) _filterCategoryId.value = FILTER_ALL
+        }
+    }
+
+    /** 切换分类的隐藏状态：隐藏后不出现在筛选栏与分类管理中，数据保留 */
+    fun setCategoryHidden(category: NoteCategoryItem, hidden: Boolean) {
+        viewModelScope.launch {
+            noteRepository.setCategoryHidden(category.id, hidden)
+            // 正在按该分类筛选时，隐藏后自动回落到「全部」，避免列表被一个看不见的分类过滤
+            if (hidden && _filterCategoryId.value == category.id) {
+                _filterCategoryId.value = FILTER_ALL
+            }
         }
     }
 

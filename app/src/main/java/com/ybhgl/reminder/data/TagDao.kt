@@ -38,4 +38,7 @@ interface TagDao {
 
     @Query("UPDATE tags SET sortOrder = :sortOrder WHERE id = :id")
     suspend fun updateSortOrder(id: Int, sortOrder: Int)
+
+    @Query("UPDATE tags SET isHidden = :hidden WHERE id = :id")
+    suspend fun setHidden(id: Int, hidden: Boolean)
 }

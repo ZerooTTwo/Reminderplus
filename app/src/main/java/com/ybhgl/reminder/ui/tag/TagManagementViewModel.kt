@@ -61,6 +61,13 @@ class TagManagementViewModel(
         }
     }
 
+    /** 切换标签的隐藏状态：隐藏后不在首页筛选与管理列表中展示，但数据保留 */
+    fun setTagHidden(tag: TagItem, hidden: Boolean) {
+        viewModelScope.launch {
+            tagRepository.setTagHidden(tag.id, hidden)
+        }
+    }
+
     fun toggleSortMode(enabled: Boolean) {
         _uiState.update { it.copy(isSortMode = enabled) }
         if (!enabled) {

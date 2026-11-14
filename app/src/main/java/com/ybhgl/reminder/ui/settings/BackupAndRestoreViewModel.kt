@@ -110,7 +110,7 @@ class BackupAndRestoreViewModel(
     // Local Zip Backup
     suspend fun backupToUri(context: Context, targetUri: Uri): String = withContext(Dispatchers.IO) {
         return@withContext try {
-            // 备份数据源含保险柜事件：isInSafe 随序列化保留，恢复备份时直接回到保险柜
+            // 备份数据源：不含回收站
             val reminders = reminderRepository.getBackupRemindersStream().first()
             if (reminders.isEmpty()) {
                 return@withContext "没有可备份的数据"
@@ -186,7 +186,7 @@ class BackupAndRestoreViewModel(
             return@withContext "请先设置并保存 WebDAV 服务器信息"
         }
 
-        // 备份数据源含保险柜事件：isInSafe 随序列化保留，恢复备份时直接回到保险柜
+        // 备份数据源：不含回收站
         val reminders = reminderRepository.getBackupRemindersStream().first()
         if (reminders.isEmpty()) {
             return@withContext "没有可备份的数据"
@@ -421,7 +421,7 @@ class BackupAndRestoreViewModel(
         }
 
         if (isSmartMerge) {
-            // 匹配池含保险柜事件：备份内的保险柜事件可与本机保险柜事件匹配更新，保留 isInSafe
+            // 匹配池：不含回收站的全部事件（用于智能合并）
             val existingList = reminderRepository.getBackupRemindersList()
             var insertedCount = 0
             var updatedCount = 0

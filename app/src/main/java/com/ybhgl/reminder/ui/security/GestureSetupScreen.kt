@@ -31,15 +31,10 @@ fun GestureSetupScreen(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val coroutineScope = rememberCoroutineScope()
-    val isSafe = mode == PasswordMode.SAFE
 
     var existingPassword by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(Unit) {
-        existingPassword = if (isSafe) {
-            SecurityPreferences.safeGesturePasswordFlow(context).first()
-        } else {
-            SecurityPreferences.gesturePasswordFlow(context).first()
-        }
+        existingPassword = SecurityPreferences.gesturePasswordFlow(context).first()
     }
 
     var step by remember { mutableStateOf(if (isModifyMode) 0 else 1) }
@@ -48,7 +43,7 @@ fun GestureSetupScreen(
     var message by remember {
         mutableStateOf(
             when {
-                isModifyMode -> if (isSafe) "请绘制原保险柜手势密码" else "请绘制原手势密码"
+                isModifyMode -> "请绘制原手势密码"
                 else -> "请绘制新手势密码 (至少4个点)"
             }
         )
@@ -61,29 +56,17 @@ fun GestureSetupScreen(
                 BiometricHelper.showBiometricPrompt(
                     activity = activity,
                     title = "开启生物识别解锁",
-                    subtitle = if (isSafe) {
-                        "使用指纹或面部识别以更快捷地进入保险柜"
-                    } else {
-                        "使用指纹或面部识别以更快捷地解锁应用"
-                    },
+                    subtitle = "使用指纹或面部识别以更快捷地解锁应用",
                     negativeButtonText = "暂不开启",
                     onSuccess = {
                         coroutineScope.launch {
-                            if (isSafe) {
-                                SecurityPreferences.saveSafeUseBiometric(context, true)
-                            } else {
-                                SecurityPreferences.saveUseBiometric(context, true)
-                            }
+                            SecurityPreferences.saveUseBiometric(context, true)
                             onSetupComplete()
                         }
                     },
                     onError = { _, _ ->
                         coroutineScope.launch {
-                            if (isSafe) {
-                                SecurityPreferences.saveSafeUseBiometric(context, false)
-                            } else {
-                                SecurityPreferences.saveUseBiometric(context, false)
-                            }
+                            SecurityPreferences.saveUseBiometric(context, false)
                             onSetupComplete()
                         }
                     }
@@ -102,9 +85,9 @@ fun GestureSetupScreen(
                 title = {
                     Text(
                         if (isModifyMode) {
-                            if (isSafe) "修改保险柜密码" else "修改手势密码"
+                            "修改手势密码"
                         } else {
-                            if (isSafe) "设置保险柜密码" else "设置手势密码"
+                            "设置手势密码"
                         }
                     )
                 },
@@ -146,7 +129,7 @@ fun GestureSetupScreen(
                     if (lockState == GestureLockState.ERROR) {
                         lockState = GestureLockState.NORMAL
                         message = when (step) {
-                            0 -> if (isSafe) "请绘制原保险柜手势密码" else "请绘制原手势密码"
+                            0 -> "请绘制原手势密码"
                             1 -> "请绘制新手势密码 (至少4个点)"
                             else -> "请再次绘制以确认"
                         }
@@ -190,14 +173,9 @@ fun GestureSetupScreen(
                                 lockState = GestureLockState.SUCCESS
                                 message = "设置成功"
                                 coroutineScope.launch {
-                                    if (isSafe) {
-                                        // 保险柜密码独立存储，不影响应用锁开关与解锁态
-                                        SecurityPreferences.saveSafeGesturePassword(context, pathStr)
-                                    } else {
-                                        SecurityPreferences.saveGesturePassword(context, pathStr)
-                                        SecurityPreferences.saveAppLockEnabled(context, true)
-                                        com.ybhgl.reminder.data.AppLockState.isUnlocked.value = true
-                                    }
+                                    SecurityPreferences.saveGesturePassword(context, pathStr)
+                                    SecurityPreferences.saveAppLockEnabled(context, true)
+                                    com.ybhgl.reminder.data.AppLockState.isUnlocked.value = true
                                     delay(500)
                                     showBiometricPromptAndComplete()
                                 }

@@ -36,6 +36,9 @@ interface NoteCategoryDao {
     @Query("UPDATE note_categories SET sortOrder = :sortOrder WHERE id = :id")
     suspend fun updateSortOrder(id: Int, sortOrder: Int)
 
+    @Query("UPDATE note_categories SET isHidden = :hidden WHERE id = :id")
+    suspend fun setHidden(id: Int, hidden: Boolean)
+
     @Transaction
     suspend fun updateCategorySortOrders(categories: List<NoteCategoryItem>) {
         categories.forEachIndexed { index, category -> updateSortOrder(category.id, index) }

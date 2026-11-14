@@ -127,9 +127,12 @@ data class ReminderItem(
     val isInRecycleBin: Boolean = false,
     /** 进入回收站时间（epoch 毫秒，展示精确到分钟；不在回收站时为 0） */
     val recycleBinTime: Long = 0L,
-    /** 是否在保险柜（隐私标记：保险柜事件不出现在首页/Widget/标签等活跃视图，但保留在备份数据中） */
+    /**
+     * 【历史遗留字段，功能已移除】保险柜功能已整体删除。
+     * 字段仅为兼容旧备份/旧数据库而保留（旧数据反序列化时不会失败），新代码不再读写该字段。
+     */
     val isInSafe: Boolean = false,
-    /** 进入保险柜时间（epoch 毫秒；不在保险柜时为 0） */
+    /** 【历史遗留字段，功能已移除】进入保险柜时间（epoch 毫秒），仅为旧备份兼容保留 */
     val safeTime: Long = 0L
 )
 

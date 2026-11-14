@@ -107,17 +107,17 @@ class ReminderReceiver : BroadcastReceiver() {
 
         val pendingResult = goAsync()
         CoroutineScope(Dispatchers.IO).launch {
-            // 兜底：事件已被删除，或处于保险柜/回收站（移入时闹钟本应已取消），
+            // 兜底：事件已被删除，或处于回收站（移入时闹钟本应已取消），
             // 历史残留 PendingIntent 触发时不得弹出通知，避免泄露隐私内容
             if (reminderId > 0) {
                 val guard = runCatching {
                     val repository = (context.applicationContext as ReminderApplication)
                         .container.reminderRepository
                     val item = repository.getReminderById(reminderId)
-                    item == null || item.isInSafe || item.isInRecycleBin
+                    item == null || item.isInRecycleBin
                 }
                 if (guard.getOrDefault(false)) {
-                    android.util.Log.d("ReminderReceiver", "reminderId=$reminderId 已删除或在保险柜/回收站，跳过通知")
+                    android.util.Log.d("ReminderReceiver", "reminderId=$reminderId 已删除或在回收站，跳过通知")
                     rescheduleIfRepeating(context.applicationContext, reminderId)
                     pendingResult.finish()
                     return@launch

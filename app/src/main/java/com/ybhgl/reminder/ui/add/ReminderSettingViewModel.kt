@@ -32,8 +32,7 @@ class ReminderSettingViewModel(
 
     /**
      * 只读预览（页面可滚动但所有内容不可交互）：
-     * 1) 回收站事件经 `readOnly=true` 路由参数进入；
-     * 2) 保险柜事件（isInSafe）加载后同样置为只读——其闹钟已被取消，不允许再编辑提醒配置。
+     * 回收站事件经 `readOnly=true` 路由参数进入即为只读。
      */
     var isReadOnly by mutableStateOf(savedStateHandle.get<Boolean>("readOnly") == true)
         private set
@@ -70,8 +69,6 @@ class ReminderSettingViewModel(
                 eventTitle = reminder.title
                 originalConfig = reminder.notificationConfig
                 uiState = uiState.copy(config = originalConfig)
-                // 保险柜事件与回收站同样按只读预览处理（置灰、不可交互）
-                if (reminder.isInSafe) isReadOnly = true
             } else if (initialConfigJson != null) {
                 try {
                     originalConfig = Json.decodeFromString<ReminderNotificationConfig>(initialConfigJson)

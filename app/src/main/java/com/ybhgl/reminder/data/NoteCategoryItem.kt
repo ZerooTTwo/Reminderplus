@@ -22,5 +22,7 @@ data class NoteCategoryItem(
     val name: String,
     /** Hex 颜色，例如 #2196F3 */
     val color: String = "#2196F3",
-    val sortOrder: Int = 0
+    val sortOrder: Int = 0,
+    /** 是否在首页筛选与管理列表中隐藏 */
+    val isHidden: Boolean = false
 )

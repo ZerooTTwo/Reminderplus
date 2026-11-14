@@ -50,7 +50,7 @@ object ManualWebDavBackup {
         }
 
         val database = ReminderDatabase.getDatabase(context)
-        // 数据源含保险柜事件：isInSafe 随序列化保留
+        // 数据源：不含回收站
         val reminders = database.reminderDao().getBackupRemindersList()
         val notes = database.noteDao().getAllNotes()
         if (reminders.isEmpty() && notes.isEmpty()) {
