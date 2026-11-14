@@ -25,7 +25,8 @@ import java.util.Locale
 
 class BackupAndRestoreViewModel(
     private val reminderRepository: ReminderRepository,
-    private val tagRepository: TagRepository
+    private val tagRepository: TagRepository,
+    private val noteRepository: NoteRepository
 ) : ViewModel() {
 
     fun generateBackupFileName(): String {
@@ -471,15 +472,25 @@ class BackupAndRestoreViewModel(
                     }
                 }
             }
-            
+
+            // 便签：按「创建时间 + 标题」判重合并，分类按名称复用
+            val (noteInserted, noteUpdated) = noteRepository.restoreMerge(
+                backupData.notes.orEmpty(),
+                backupData.noteCategories
+            )
+            val noteSummary = buildString {
+                if (noteInserted > 0) append("、便签新增 $noteInserted 条")
+                if (noteUpdated > 0) append("、便签更新 $noteUpdated 条")
+            }
+
             // For merge, we don't overwrite user's preference options to avoid disrupting their current theme/layout.
             // Update last backup to clear warning
             BackupPreferences.saveLastBackupTimestamp(context, System.currentTimeMillis())
             
             return if (updatedCount > 0) {
-                "智能合并完成，共新增 $insertedCount 条记录，覆盖更新 $updatedCount 条相同提醒的设置"
+                "智能合并完成，共新增 $insertedCount 条记录，覆盖更新 $updatedCount 条相同提醒的设置$noteSummary"
             } else {
-                "智能合并完成，共新增 $insertedCount 条不重复记录"
+                "智能合并完成，共新增 $insertedCount 条不重复记录$noteSummary"
             }
         } else {
             reminderRepository.deleteAllReminders()
@@ -507,10 +518,16 @@ class BackupAndRestoreViewModel(
             backupData.scrollBehavior?.let { saveScrollBehavior(context, it) }
             backupData.homeCategoryEnabled?.let { saveHomeCategory(context, it) }
 
+            // 便签：整体覆盖恢复
+            val restoredNoteCount = noteRepository.restoreReplace(
+                backupData.notes.orEmpty(),
+                backupData.noteCategories
+            )
+
             // Update last backup to clear warning
             BackupPreferences.saveLastBackupTimestamp(context, System.currentTimeMillis())
 
-            return "恢复完成，共导入 ${backupData.reminders.size} 条记录"
+            return "恢复完成，共导入 ${backupData.reminders.size} 条记录、$restoredNoteCount 条便签"
         }
     }
 

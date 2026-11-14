@@ -324,7 +324,12 @@ object BackupPreferences {
             val reminders = actualRepository?.getBackupRemindersStream()?.first()
                 ?: ReminderDatabase.getDatabase(context).reminderDao().getBackupRemindersList()
 
-            if (reminders.isEmpty()) return@withLock AutoBackupResult(success = false, errorMessage = "无提醒事项数据，不进行备份")
+            if (reminders.isEmpty()) {
+                val noteCount = ReminderDatabase.getDatabase(context).noteDao().count()
+                if (noteCount == 0) {
+                    return@withLock AutoBackupResult(success = false, errorMessage = "无提醒或便签数据，不进行备份")
+                }
+            }
 
             val tags = ReminderDatabase.getDatabase(context).tagDao().getAllTags()
 

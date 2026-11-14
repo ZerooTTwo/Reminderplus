@@ -42,11 +42,12 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.ybhgl.reminder"
+        // 与上游包名区分，可与原版 Reminder 共存安装（内部命名空间保持不变，避免大范围改包）
+        applicationId = "com.dswork.reminder"
         minSdk = 28
         targetSdk = 36
-        versionCode = 380
-        versionName = "3.8.0"
+        versionCode = 400
+        versionName = "4.0.0-notes"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

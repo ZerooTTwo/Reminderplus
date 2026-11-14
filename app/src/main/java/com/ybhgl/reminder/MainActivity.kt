@@ -117,6 +117,7 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.automirrored.filled.Notes
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -754,6 +755,11 @@ object Routes {
     const val ZEJI_DETAIL_PATTERN = "$ZEJI_DETAIL?term={term}&recommended={recommended}"
     /** 黄历页当前查看日期回传键（写回 reminder_list 条目，返回后日历页同步选中） */
     const val ALMANAC_DATE_RESULT_KEY = "almanacDate"
+    /** 便签列表页 */
+    const val NOTES = "notes"
+    /** 便签编辑页（noteId = -1 表示新建） */
+    const val NOTE_EDIT_BASE = "note_edit"
+    const val NOTE_EDIT_PATTERN = "$NOTE_EDIT_BASE/{noteId}"
 
     fun editReminder(reminderId: Int, readOnly: Boolean = false): String = "$EDIT_REMINDER_BASE/$reminderId?readOnly=$readOnly"
     fun detailReminder(reminderId: Int): String = "$DETAIL_REMINDER_BASE/$reminderId"
@@ -789,6 +795,9 @@ object Routes {
     fun almanacDetail(date: LocalDate): String = "$ALMANAC_DETAIL_BASE?date=$date"
     fun zejiDetail(term: String, recommended: Boolean): String =
         "$ZEJI_DETAIL?term=${android.net.Uri.encode(term)}&recommended=$recommended"
+
+    /** 便签编辑页；noteId < 0 表示新建 */
+    fun noteEdit(noteId: Int): String = "$NOTE_EDIT_BASE/$noteId"
 }
 
 @OptIn(ExperimentalSerializationApi::class, ExperimentalFoundationApi::class)
@@ -1008,6 +1017,11 @@ fun ReminderApp(onPermissionsFlowSettled: () -> Unit = {}) {
                 ) { }
                 composable(route = Routes.SAFE) { }
                 composable(route = Routes.SAFE_PASSWORD) { }
+                composable(route = Routes.NOTES) { }
+                composable(
+                    route = Routes.NOTE_EDIT_PATTERN,
+                    arguments = listOf(navArgument("noteId") { type = NavType.IntType })
+                ) { }
                 composable(route = Routes.GESTURE_SETUP) { }
                 composable(route = Routes.GESTURE_MODIFY) { }
                 composable(
@@ -2193,6 +2207,12 @@ fun ReminderListScreen(
                                         )
                                     }
                                 }
+                            }
+                            IconButton(onClick = { navController.navigate(Routes.NOTES) }) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.Notes,
+                                    contentDescription = "便签"
+                                )
                             }
                             IconButton(
                                 onClick = { isSearchActive = true },
@@ -4222,6 +4242,18 @@ private fun ReminderNavContent(
             focusTarget = entry.arguments?.getString("target")?.takeIf { it.isNotEmpty() }
         )
         Routes.SAFE -> com.ybhgl.reminder.ui.safe.SafeScreen(navController = navController)
+        Routes.NOTES -> com.ybhgl.reminder.ui.notes.NotesScreen(
+            onNavigateBack = { navController.navigateUp() },
+            onOpenNote = { noteId -> navController.navigate(Routes.noteEdit(noteId)) }
+        )
+        Routes.NOTE_EDIT_PATTERN -> {
+            val noteId = entry.arguments?.getInt("noteId")
+                ?: com.ybhgl.reminder.ui.notes.NEW_NOTE_ID
+            com.ybhgl.reminder.ui.notes.NoteEditScreen(
+                noteId = noteId,
+                onNavigateBack = { navController.navigateUp() }
+            )
+        }
         Routes.SAFE_PASSWORD ->
             com.ybhgl.reminder.ui.security.GestureSetupScreen(
                 onNavigateBack = { navController.navigateUp() },

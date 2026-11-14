@@ -25,7 +25,17 @@ object AppViewModelProvider {
             val app = reminderApplication()
             BackupAndRestoreViewModel(
                 reminderRepository = app.container.reminderRepository,
-                tagRepository = app.container.tagRepository
+                tagRepository = app.container.tagRepository,
+                noteRepository = app.container.noteRepository
+            )
+        }
+
+        // Initializer for NotesViewModel（便签列表 / 编辑共用）
+        initializer {
+            val app = reminderApplication()
+            com.ybhgl.reminder.ui.notes.NotesViewModel(
+                noteRepository = app.container.noteRepository,
+                appContext = app.applicationContext
             )
         }
 

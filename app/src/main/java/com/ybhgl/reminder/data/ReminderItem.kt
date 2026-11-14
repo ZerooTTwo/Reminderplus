@@ -174,5 +174,9 @@ data class BackupData(
     val customColorSeed: Int? = null,
     val scrollBehavior: String? = null,
     val homeCategoryEnabled: Boolean? = null,
-    val cardBackgroundImages: Map<String, String>? = null
+    val cardBackgroundImages: Map<String, String>? = null,
+    /** 便签（旧版本备份没有该字段，缺省 null 以保持向后兼容） */
+    val notes: List<NoteItem>? = null,
+    /** 便签分类（旧版本备份没有该字段，缺省 null） */
+    val noteCategories: List<NoteCategoryItem>? = null
 )

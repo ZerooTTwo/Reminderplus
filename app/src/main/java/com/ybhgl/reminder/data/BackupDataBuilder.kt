@@ -20,9 +20,16 @@ object BackupDataBuilder {
         val webDavPassword = BackupPreferences.webDavPasswordFlow(context).first()
         val webDavPath = BackupPreferences.webDavPathFlow(context).first()
 
+        // 便签数据直接从数据库取，避免污染各调用点的签名
+        val db = ReminderDatabase.getDatabase(context)
+        val notes = db.noteDao().getAllNotes()
+        val noteCategories = db.noteCategoryDao().getAllCategories()
+
         return BackupData(
             reminders = reminders,
             tags = tags,
+            notes = notes,
+            noteCategories = noteCategories,
             themeOption = themeOptionFlow(context).first(),
             pureBlackEnabled = pureBlackFlow(context).first(),
             cardColoringEnabled = cardColoringFlow(context).first(),
